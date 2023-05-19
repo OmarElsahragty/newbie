@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "moduleResolution": "node",
+    "lib": ["ES2021"],
+    "target": "es6",
+    "module": "NodeNext",
+    "outDir": "dist/",
+    "sourceRoot": "./",
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "noImplicitAny": true,
+    "inlineSources": true,
+    "esModuleInterop": true,
+    "strictNullChecks": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "paths": {},
+    "typeRoots": ["./node_modules/@types", "./src/types"]
+  },
+  "exclude": ["node_modules"]
+}

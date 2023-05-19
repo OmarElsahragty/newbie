@@ -1,0 +1,6 @@
+{
+  "watch": ["constants", "config", "src"],
+  "ignore": [".git"],
+  "ext": "ts,json,js",
+  "exec": "ts-node ."
+}
