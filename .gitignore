@@ -79,3 +79,6 @@ yarn-error.log*
 
 # local
 /local
+
+# dist
+/newbie
