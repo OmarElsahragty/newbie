@@ -5,6 +5,7 @@ import { readFile, pathExists, outputFile, remove } from "fs-extra";
 import { ModuleInterface } from "./types";
 import validator from "./validations";
 import generators from "./generators";
+import modifiers from "./modifiers";
 
 export default async (yamlFilePath = "./newbie.example.yaml", distDirectoryName = "newbie") => {
   const distPath = join(__dirname, distDirectoryName);
@@ -27,4 +28,6 @@ export default async (yamlFilePath = "./newbie.example.yaml", distDirectoryName 
   await zip.close();
 
   await generators(distPath, modules);
+
+  await modifiers(distPath, modules);
 };

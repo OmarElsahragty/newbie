@@ -104,28 +104,10 @@ export const ${module.singularName}Model = model<${capitalizeFirstLetter(module.
 `,
 });
 
-export const typesGenerator = async (dist: string, module: ModuleInterface) => {
-  const path = join(dist, "src", "types", "types.ts");
-  return { path, content: await readFile(path, "utf8") };
-};
-
-export const enumsGenerator = async (dist: string, module: ModuleInterface) => {
-  const path = join(dist, "src", "types", "types.ts");
-  return { path, content: await readFile(path, "utf8") };
-};
-
-export const schemasGenerator = async (dist: string, module: ModuleInterface) => {
-  const path = join(dist, "src", "types", "schemas.ts");
-  return { path, content: await readFile(path, "utf8") };
-};
-
 export default async (distPath: string, modules: ModuleInterface[]) => {
   await Promise.all(
     modules.map(module => {
       return Promise.all([
-        writePartialModule(distPath, module, enumsGenerator),
-        writePartialModule(distPath, module, schemasGenerator),
-        writePartialModule(distPath, module, typesGenerator),
         writePartialModule(distPath, module, modelGenerator),
         writePartialModule(distPath, module, repositoryGenerator),
         writePartialModule(distPath, module, serviceGenerator),
