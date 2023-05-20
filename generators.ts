@@ -2,7 +2,6 @@ import { join } from "path";
 import { capitalizeFirstLetter } from "./utilities";
 import { ModuleInterface } from "./types";
 import { readFile } from "fs-extra";
-import { async } from "node-stream-zip";
 
 export const routesGenerator = async (dist: string, module: ModuleInterface) => ({
   path: join(dist, "src", "routes", `${module.singularName}.routes.ts`),
