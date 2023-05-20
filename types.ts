@@ -1,24 +1,18 @@
-export interface ModuleInterface {
-  singularName: string;
-  pluralName: string;
+export interface AttributeInterface {
+  name: string;
+  type: string;
+  unique?: boolean;
+  required?: boolean;
+  hash?: boolean;
+  default?: string;
+  enum?: string[];
+  isArray?: boolean;
+  attributes?: AttributeInterface[];
 }
 
-// export interface Attribute {
-//   name: string;
-//   type: string;
-//   unique: boolean;
-//   required: boolean;
-//   reference?: string;
-//   values?: string[];
-// }
-
-// export interface Model {
-//   name: ModuleNameInterface;
-//   attributes: Attribute[];
-// }
-
-// export interface BackendData {
-//   Enums: string[];
-//   Schemas: string[];
-//   Types: string[];
-// }
+export interface ModuleInterface {
+  singularName?: string;
+  pluralName?: string;
+  attributes: AttributeInterface[];
+  auth?: { identifier: string; password: string };
+}

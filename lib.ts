@@ -1,11 +1,15 @@
 import { join } from "path";
+import { parse } from "yaml";
 import Zip from "node-stream-zip";
-import { pathExists, outputFile, remove } from "fs-extra";
-import * as generators from "./generators";
-import { writePartialModule } from "./utilities";
+import { readFile, pathExists, outputFile, remove } from "fs-extra";
+import { ModuleInterface } from "./types";
+import validator from "./validations";
+import generators from "./generators";
 
-export default async (modules = ["test"], distDirectoryName = "newbie") => {
+export default async (yamlFilePath = "./newbie.example.yaml", distDirectoryName = "newbie") => {
   const distPath = join(__dirname, distDirectoryName);
+  const data: Record<string, ModuleInterface>[] = await parse(await readFile(join(__dirname, yamlFilePath), "utf8"));
+  const modules = await validator(data);
 
   if (await pathExists(distPath)) await remove(distPath);
   const zip = new Zip.async({ file: join(__dirname, "skeleton.zip"), storeEntries: true });
@@ -22,14 +26,5 @@ export default async (modules = ["test"], distDirectoryName = "newbie") => {
 
   await zip.close();
 
-  await Promise.all([
-    writePartialModule(distPath, modules, generators.enumsGenerator),
-    writePartialModule(distPath, modules, generators.schemasGenerator),
-    writePartialModule(distPath, modules, generators.typesGenerator),
-    writePartialModule(distPath, modules, generators.modelGenerator),
-    writePartialModule(distPath, modules, generators.repositoryGenerator),
-    writePartialModule(distPath, modules, generators.serviceGenerator),
-    writePartialModule(distPath, modules, generators.controllerGenerator),
-    writePartialModule(distPath, modules, generators.routesGenerator),
-  ]);
+  await generators(distPath, modules);
 };

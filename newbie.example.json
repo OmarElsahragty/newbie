@@ -1,0 +1,30 @@
+[
+  {
+    "users": {
+      "auth": { "identifier": "email", "password": "password" },
+      "attributes": [
+        { "name": "email", "type": "string", "unique": true, "required": true },
+        { "name": "password", "type": "string", "required": true, "hash": true }
+      ]
+    }
+  },
+  {
+    "posts": {
+      "attributes": [
+        { "name": "title", "type": "string", "required": true },
+        { "name": "content", "type": "string", "required": true },
+        { "name": "author", "type": "user", "required": true },
+        { "name": "visibility", "type": "string", "default": "private", "enum": ["public", "private"] },
+        {
+          "name": "comments",
+          "type": "object",
+          "isArray": true,
+          "attributes": [
+            { "name": "writer", "type": "user", "required": true },
+            { "name": "text", "type": "string", "required": true }
+          ]
+        }
+      ]
+    }
+  }
+]

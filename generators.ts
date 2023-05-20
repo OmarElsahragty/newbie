@@ -1,5 +1,5 @@
 import { join } from "path";
-import { capitalizeFirstLetter } from "./utilities";
+import { capitalizeFirstLetter, writePartialModule } from "./utilities";
 import { ModuleInterface } from "./types";
 import { readFile } from "fs-extra";
 
@@ -117,4 +117,21 @@ export const enumsGenerator = async (dist: string, module: ModuleInterface) => {
 export const schemasGenerator = async (dist: string, module: ModuleInterface) => {
   const path = join(dist, "src", "types", "schemas.ts");
   return { path, content: await readFile(path, "utf8") };
+};
+
+export default async (distPath: string, modules: ModuleInterface[]) => {
+  await Promise.all(
+    modules.map(module => {
+      return Promise.all([
+        writePartialModule(distPath, module, enumsGenerator),
+        writePartialModule(distPath, module, schemasGenerator),
+        writePartialModule(distPath, module, typesGenerator),
+        writePartialModule(distPath, module, modelGenerator),
+        writePartialModule(distPath, module, repositoryGenerator),
+        writePartialModule(distPath, module, serviceGenerator),
+        writePartialModule(distPath, module, controllerGenerator),
+        writePartialModule(distPath, module, routesGenerator),
+      ]);
+    })
+  );
 };
