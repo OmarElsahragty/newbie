@@ -1,14 +1,15 @@
 import { join } from "path";
+import { plural } from "pluralize";
 import { ModuleInterface } from "./types";
-import { schemasBuilder } from "./helpers";
+import { mongooseAttributesBuilder, zodBuilder } from "./helpers";
 import { capitalizeFirstLetter, writePartialModule } from "./utilities";
 
-export const routesGenerator = async (dist: string, module: ModuleInterface) => ({
-  path: join(dist, "src", "routes", `${module.singularName}.routes.ts`),
-  content: `import { Router } from "express";
-import { ${module.singularName}Controller } from "../controllers";
-import { validateMiddleware } from "../middleware";
-import { ${module.singularName}Schema } from "../types";
+export const routesGenerator = async (dist: string, module: ModuleInterface) => {
+  const content = `
+  import { Router } from "express";
+  import { ${module.singularName}Controller } from "../controllers";
+  import { validateMiddleware } from "../middleware";
+  import { ${module.singularName}Schema } from "../types";
 
 const router = Router();
 
@@ -25,122 +26,139 @@ router
   .put(validateMiddleware(${module.singularName}Schema), ${module.singularName}Controller.update)
   .delete(${module.singularName}Controller.delete);
 
-export default router;
-`,
-});
+export default router;`;
 
-export const controllerGenerator = async (dist: string, module: ModuleInterface) => ({
-  path: join(dist, "/src", "controllers", `/${module.singularName}.controller.ts`),
-  content: `import { Request, Response, NextFunction } from "express";
-import DefaultController from "./default.controller";
-import { ${module.singularName}Service } from "../services";
-import { ${capitalizeFirstLetter(module.singularName)}Interface } from "../types";
+  return { path: join(dist, "src", "routes", `${module.singularName}.routes.ts`), content };
+};
 
-class ${capitalizeFirstLetter(module.singularName)}Controller extends DefaultController<${capitalizeFirstLetter(
+export const controllerGenerator = async (dist: string, module: ModuleInterface) => {
+  const content = `
+  import { Request, Response, NextFunction } from "express";
+  import DefaultController from "./default.controller";
+  import { ${module.singularName}Service } from "../services";
+  import { ${capitalizeFirstLetter(module.singularName)}Interface } from "../types";
+  
+  class ${capitalizeFirstLetter(module.singularName)}Controller extends DefaultController<${capitalizeFirstLetter(
     module.singularName
   )}Interface> {
-  constructor() {
-    super(${module.singularName}Service);
+    constructor() {
+      super(${module.singularName}Service);
+    }
   }
-}
 
-export default new ${capitalizeFirstLetter(module.singularName)}Controller();
-`,
-});
+  export default new ${capitalizeFirstLetter(module.singularName)}Controller();`;
 
-export const serviceGenerator = async (dist: string, module: ModuleInterface) => ({
-  path: join(dist, "src", "services", `${module.singularName}.service.ts`),
-  content: `import DefaultRepository from "./default.repository";
-import { ${capitalizeFirstLetter(module.singularName)}Interface } from "../../types";
-import { ${module.singularName}Model } from "../models";
+  return { path: join(dist, "/src", "controllers", `/${module.singularName}.controller.ts`), content };
+};
 
-class ${capitalizeFirstLetter(module.singularName)}Repository extends DefaultRepository<${capitalizeFirstLetter(
+export const serviceGenerator = async (dist: string, module: ModuleInterface) => {
+  const content = `
+  import DefaultRepository from "./default.repository";
+  import { ${capitalizeFirstLetter(module.singularName)}Interface } from "../../types";
+  import { ${module.singularName}Model } from "../models";
+
+  class ${capitalizeFirstLetter(module.singularName)}Repository extends DefaultRepository<${capitalizeFirstLetter(
     module.singularName
   )}Interface> {
-  constructor() {
-    super(${module.singularName}Model);
+    constructor() {
+      super(${module.singularName}Model);
+    }
   }
-}
+  export const ${module.singularName}Repository = new ${capitalizeFirstLetter(module.singularName)}Repository();`;
 
-export const ${module.singularName}Repository = new ${capitalizeFirstLetter(module.singularName)}Repository();
-`,
-});
+  return { path: join(dist, "src", "services", `${module.singularName}.service.ts`), content };
+};
 
-export const repositoryGenerator = async (dist: string, module: ModuleInterface) => ({
-  path: join(dist, "src", "repositories", `${module.singularName}.repository.ts`),
-  content: `import DefaultRepository from "./default.repository";
-import { ${capitalizeFirstLetter(module.singularName)}Interface } from "../../types";
-import { ${module.singularName}Model } from "../models";
-
-class ${capitalizeFirstLetter(module.singularName)}Repository extends DefaultRepository<${capitalizeFirstLetter(
+export const repositoryGenerator = async (dist: string, module: ModuleInterface) => {
+  const content = `
+  import DefaultRepository from "./default.repository";
+  import { ${capitalizeFirstLetter(module.singularName)}Interface } from "../../types";
+  import { ${module.singularName}Model } from "../models";
+  
+  class ${capitalizeFirstLetter(module.singularName)}Repository extends DefaultRepository<${capitalizeFirstLetter(
     module.singularName
   )}Interface> {
-  constructor() {
-    super(${module.singularName}Model);
+    constructor() {
+      super(${module.singularName}Model);
+    }
   }
-}
+  export const ${module.singularName}Repository = new ${capitalizeFirstLetter(module.singularName)}Repository();`;
 
-export const ${module.singularName}Repository = new ${capitalizeFirstLetter(module.singularName)}Repository();
-`,
-});
+  return { path: join(dist, "src", "repositories", `${module.singularName}.repository.ts`), content };
+};
 
-export const modelGenerator = async (dist: string, module: ModuleInterface) => ({
-  path: join(dist, "src", "database", "models", `${module.singularName}.model.ts`),
-  content: `import { Schema, model } from "mongoose";
-import { schemas } from "../../../constants";
-${module.auth?.password ? 'import { createHash } from "../../libraries";' : ""}
-import { ${capitalizeFirstLetter(module.singularName)}Interface } from "../../types";
+export const modelGenerator = async (dist: string, module: ModuleInterface) => {
+  const attributes = module.auth?.identifier
+    ? module.attributes.concat([
+        { name: "accessType", type: "string", enum: ["ADMIN", "APPROVED", "DENIED"], default: "DENIED" },
+      ])
+    : module.attributes;
 
-const ${module.singularName}Schema = new Schema<${capitalizeFirstLetter(module.singularName)}Interface>(
-  {
+  const importedTypes = attributes
+    ?.filter(attribute => attribute.enum)
+    .map(({ name }) => `${capitalizeFirstLetter(plural(name))}`)
+    .concat([`${capitalizeFirstLetter(module.singularName)}Interface`]);
+
+  const content = `
+  import { Schema, model } from "mongoose";
+  import { schemas } from "../../../constants";
+  import { ${importedTypes.join(", ")} } from "../../types";
+  ${module.auth?.password ? 'import { createHash } from "../../libraries";' : ""}
+
+  const ${module.singularName}Schema = new Schema<${capitalizeFirstLetter(module.singularName)}Interface>(
+    {
+      ${mongooseAttributesBuilder(attributes)},
+      isDeleted: { type: Boolean, default: false, required: false },
+    },
+    { timestamps: true, versionKey: false }
+    )
+    ${module.auth?.identifier ? `.index({ ${module.auth.identifier}: 1 })\n.index({ accessType: 1 })` : ""}
+    .index({ isDeleted: 1 });
     
-    isDeleted: { type: Boolean, default: false, required: false },
-  },
-  { timestamps: true, versionKey: false }
-)
-${module.auth?.identifier ? `.index({ ${module.auth.identifier}: 1 })\n` : ""}.index({ isDeleted: 1 });
-
-${
-  module.auth?.password
-    ? `// ************** hash ************** //
-${module.singularName}Schema.pre("save", async function (next) {
-  if (!this.isModified("${module.auth.password}")) return next();
-  if (this.${module.auth.password}) this.${module.auth.password} = await createHash(this.${module.auth.password});
-  next();
-});
-
-${module.singularName}Schema.pre("findOneAndUpdate", async function (next) {
-  const data = this.getUpdate() as ${capitalizeFirstLetter(module.singularName)}Interface;
-  if (data?.${module.auth.password}) data.${module.auth.password} = await createHash(data.${module.auth.password});
-  this.setUpdate(data);
-  next();
-});`
-    : ""
-}
-
-export const ${module.singularName}Model = model<${capitalizeFirstLetter(module.singularName)}Interface>(schemas.${
+    ${
+      module.auth?.password
+        ? `// ************** hash ************** //
+      ${module.singularName}Schema.pre("save", async function (next) {
+        if (!this.isModified("${module.auth.password}")) return next();
+        if (this.${module.auth.password}) this.${module.auth.password} = await createHash(this.${module.auth.password});
+        next();
+      });
+      
+      ${module.singularName}Schema.pre("findOneAndUpdate", async function (next) {
+        const data = this.getUpdate() as ${capitalizeFirstLetter(module.singularName)}Interface;
+        if (data?.${module.auth.password}) data.${module.auth.password} = await createHash(data.${
+            module.auth.password
+          });
+        this.setUpdate(data);
+        next();
+      });`
+        : ""
+    }
+    
+    export const ${module.singularName}Model = model<${capitalizeFirstLetter(module.singularName)}Interface>(schemas.${
     module.singularName
-  }, ${module.singularName}Schema);
-`,
-});
+  }, ${module.singularName}Schema);`;
+
+  return { path: join(dist, "src", "database", "models", `${module.singularName}.model.ts`), content };
+};
 
 export const schemasGenerator = async (dist: string, modules: ModuleInterface[]) => {
   const authModule = modules.find(({ auth }) => auth?.identifier && auth?.password);
-
-  const content = `import { z } from "zod";
-import * as enums from "./enums";
-
-${
-  !authModule?.auth?.identifier || !authModule?.auth?.password
-    ? ""
-    : `export const authSchema = z.object({
-  ${authModule.auth.identifier}: z.string().email(),
-  ${authModule.auth.password}: z.string(),
-  accessType: z.enum(enums.AccessTypes).optional(),
-});\n`
-}
-\n// ********************************* //\n
-${schemasBuilder(modules, { authModule })}`;
+  const content = `
+  import { z } from "zod";
+  import * as enums from "./enums";
+  
+  ${
+    !authModule?.auth?.identifier || !authModule?.auth?.password
+      ? ""
+      : `export const authSchema = z.object({
+      ${authModule.auth.identifier}: z.string().email(),
+      ${authModule.auth.password}: z.string(),
+      accessType: z.enum(enums.AccessTypes).optional(),
+    });\n`
+  }
+  \n// ********************************* //\n
+  ${zodBuilder(modules, { authModule })}`;
 
   return { path: join(dist, "src", "types", "schemas.ts"), content };
 };

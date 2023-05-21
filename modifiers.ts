@@ -10,24 +10,25 @@ export const typesModifier = async (dist: string, modules: ModuleInterface[]) =>
 
   const authModule = modules.find(({ auth }) => auth?.identifier && auth?.password);
 
-  const content = `${file.replaceAll(
+  const content = `
+  ${file.replaceAll(
     "$$$ request authorization $$$",
     !authModule?.singularName
       ? ""
       : `declare module "express-serve-static-core" {
-  interface Request {
-    client?: ${authModule.singularName}Interface;
-  }
-}`
+      interface Request {
+        client?: ${authModule.singularName}Interface;
+      }
+    }`
   )}
-\n\n${modules
-    .map(
-      ({ singularName }) =>
-        `export interface ${capitalizeFirstLetter(
-          singularName
-        )}Interface extends EntityInformationInterface, z.infer<typeof schemas.${singularName}Schema> {};`
-    )
-    .join("\n")}`;
+    \n\n${modules
+      .map(
+        ({ singularName }) =>
+          `export interface ${capitalizeFirstLetter(
+            singularName
+          )}Interface extends EntityInformationInterface, z.infer<typeof schemas.${singularName}Schema> {};`
+      )
+      .join("\n")}`;
 
   return { path, content };
 };
@@ -38,29 +39,31 @@ export const enumsModifier = async (dist: string, modules: ModuleInterface[]) =>
 
   const authModule = modules.find(({ auth }) => auth?.identifier && auth?.password);
 
-  const content = `${file.replaceAll(
+  const content = `
+  ${file.replaceAll(
     "$$$ authorization types $$$",
     !authModule
       ? ""
       : `export const AccessTypes = ["ADMIN", "APPROVED", "DENIED"] as const;
-export type AccessTypesEnum = (typeof AccessTypes)[number];`
+    export type AccessTypesEnum = (typeof AccessTypes)[number];`
   )}\n\n
-${modules
-  .reduce((acc: string[], module) => {
-    return acc.concat(
-      module.attributes.map(attribute => {
-        if (!attribute.enum?.length) return "";
+    ${modules
+      .reduce((acc: string[], module) => {
+        return acc.concat(
+          module.attributes.map(attribute => {
+            if (!attribute.enum?.length) return "";
 
-        return `export const ${capitalizeFirstLetter(plural(attribute.name))} = [${attribute.enum.map(value =>
-          JSON.stringify(value)
-        )}] as const;
-export type ${capitalizeFirstLetter(attribute.name)}Enum = (typeof ${capitalizeFirstLetter(
-          plural(attribute.name)
-        )})[number];`;
-      })
-    );
-  }, [])
-  .filter(item => item)}`;
+            return `export const ${capitalizeFirstLetter(plural(attribute.name))} = [${attribute.enum.map(value =>
+              JSON.stringify(value)
+            )}] as const;
+            export type ${capitalizeFirstLetter(attribute.name)}Enum = (typeof ${capitalizeFirstLetter(
+              plural(attribute.name)
+            )})[number];`;
+          })
+        );
+      }, [])
+      .filter(item => item)
+      .join("\n\n")}`;
 
   return { path, content };
 };
@@ -88,8 +91,9 @@ export const routesModifier = async (dist: string, modules: ModuleInterface[]) =
     .replaceAll(
       "$$$ authentication routes $$$",
       authModule?.singularName
-        ? `router.route("/register").post(validateMiddleware(${authModule.singularName}Schema), ${authModule.singularName}Controller.create);
-router.route("/authenticate").post(validateMiddleware(authSchema), ${authModule.singularName}Controller.authenticate);`
+        ? `
+        router.route("/register").post(validateMiddleware(${authModule.singularName}Schema), ${authModule.singularName}Controller.create);
+        router.route("/authenticate").post(validateMiddleware(authSchema), ${authModule.singularName}Controller.authenticate);`
         : ""
     );
 

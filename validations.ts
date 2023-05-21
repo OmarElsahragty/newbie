@@ -11,7 +11,7 @@ export const attributeSchema: z.ZodSchema<AttributeInterface> = z.lazy(() =>
     required: z.boolean().optional(),
     default: z.string().optional(),
     enum: z.array(z.string()).optional(),
-    isArray: z.boolean().optional(),
+    array: z.boolean().optional(),
     attributes: z.array(attributeSchema).optional(),
   })
 );

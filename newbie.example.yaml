@@ -29,7 +29,7 @@
 
       - name: comments
         type: object
-        isArray: true
+        array: true
 
         attributes:
           - name: writer

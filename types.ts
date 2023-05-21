@@ -5,7 +5,7 @@ export interface AttributeInterface {
   required?: boolean;
   default?: string;
   enum?: string[];
-  isArray?: boolean;
+  array?: boolean;
   attributes?: AttributeInterface[];
   isRef?: boolean;
 }
