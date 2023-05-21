@@ -12,7 +12,6 @@
       - name: password
         type: string
         required: true
-        hash: true
 
 - posts:
     attributes:

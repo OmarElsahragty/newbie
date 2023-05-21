@@ -9,7 +9,6 @@ export const attributeSchema: z.ZodSchema<AttributeInterface> = z.lazy(() =>
     type: z.string(),
     unique: z.boolean().optional(),
     required: z.boolean().optional(),
-    hash: z.boolean().optional(),
     default: z.string().optional(),
     enum: z.array(z.string()).optional(),
     isArray: z.boolean().optional(),
@@ -31,9 +30,10 @@ export default async (data: any[]) => {
         const moduleName = Object.keys(item)[0];
         const module = await moduleSchema.parseAsync(item[moduleName]);
         // TODO: EXTRA VALIDATION
+
         return Object.assign(module, {
-          singularName: singular(moduleName),
-          pluralName: plural(moduleName),
+          singularName: singular(moduleName).toLowerCase(),
+          pluralName: plural(moduleName).toLowerCase(),
         }) as ModuleInterface;
       })
     );

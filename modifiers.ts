@@ -72,37 +72,24 @@ export const routesModifier = async (dist: string, modules: ModuleInterface[]) =
   const authModule = modules.find(({ auth }) => auth?.identifier && auth?.password);
 
   const content = file
-    .replaceAll(
-      "$$$ import controllers $$$",
-      modules.map(({ singularName }) => `${singularName?.toLocaleLowerCase()}Controller`).join(", ")
-    )
+    .replaceAll("$$$ import controllers $$$", modules.map(({ singularName }) => `${singularName}Controller`).join(", "))
     .replaceAll(
       "$$$ import routes $$$",
-      modules
-        .map(({ singularName }) =>
-          singularName
-            ? `import ${singularName.toLocaleLowerCase()}Routes from "./${singularName.toLocaleLowerCase()}.routes";`
-            : ""
-        )
-        .join("\n")
+      modules.map(({ singularName }) => `import ${singularName}Routes from "./${singularName}.routes";`).join("\n")
     )
     .replaceAll(
       "$$$ use routes $$$",
-      modules
-        .map(({ singularName }) => (singularName ? `router.use(${singularName.toLocaleLowerCase()}Routes);` : ""))
-        .join("\n")
+      modules.map(({ singularName }) => (singularName ? `router.use(${singularName}Routes);` : "")).join("\n")
     )
     .replaceAll(
       "$$$ import authentication schema $$$",
-      authModule?.singularName
-        ? `import { authSchema, ${authModule.singularName.toLocaleLowerCase()}Schema } from "../types";`
-        : ""
+      authModule?.singularName ? `import { authSchema, ${authModule.singularName}Schema } from "../types";` : ""
     )
     .replaceAll(
       "$$$ authentication routes $$$",
       authModule?.singularName
-        ? `router.route("/register").post(validateMiddleware(${authModule.singularName.toLocaleLowerCase()}Schema), ${authModule.singularName.toLocaleLowerCase()}Controller.create);
-router.route("/authenticate").post(validateMiddleware(authSchema), ${authModule.singularName.toLocaleLowerCase()}Controller.authenticate);`
+        ? `router.route("/register").post(validateMiddleware(${authModule.singularName}Schema), ${authModule.singularName}Controller.create);
+router.route("/authenticate").post(validateMiddleware(authSchema), ${authModule.singularName}Controller.authenticate);`
         : ""
     );
 

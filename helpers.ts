@@ -2,17 +2,31 @@ import { plural, singular } from "pluralize";
 import { capitalizeFirstLetter } from "./utilities";
 import { AttributeInterface, ModuleInterface } from "./types";
 
-const schemasAttributesBuilder = (attribute: AttributeInterface, { modulesNames }: { modulesNames: string[] }) => {
-  let type = modulesNames.includes(attribute.type)
-    ? `${singular(attribute.type).toLocaleLowerCase()}Schema`
-    : `z.${attribute.type.toLocaleLowerCase()}()`;
+export const setModulesRef = (modules: ModuleInterface[]) => {
+  const modulesNames = modules.reduce(
+    (acc: string[], model) =>
+      model.singularName && model.pluralName ? acc.concat([model.singularName, model.pluralName]) : acc,
+    []
+  );
 
-  if (attribute.type === "object" && attribute.attributes) {
-    type = `z.object({ ${attribute.attributes
-      .map(attribute => schemasAttributesBuilder(attribute, { modulesNames }))
-      .join(", ")} })`;
-  }
+  return modules.map(module => {
+    return {
+      ...module,
+      attributes: module.attributes.map(attribute => ({
+        ...attribute,
+        isRef: modulesNames.includes(attribute.type),
+      })),
+    };
+  });
+};
+
+const schemasAttributesBuilder = (attribute: AttributeInterface) => {
+  let type = attribute.isRef ? `${singular(attribute.type)}Schema` : `z.${attribute.type}()`;
+
   if (attribute.enum) type = `z.enum(enums.${capitalizeFirstLetter(plural(attribute.name))})`;
+  if (attribute.type === "object" && attribute.attributes) {
+    type = `z.object({ ${attribute.attributes.map(attribute => schemasAttributesBuilder(attribute)).join(", ")} })`;
+  }
 
   if (!attribute.required) type = `${type}.optional()`;
   if (attribute.isArray) type = `${type}.array()`;
@@ -21,12 +35,6 @@ const schemasAttributesBuilder = (attribute: AttributeInterface, { modulesNames 
 };
 
 export const schemasBuilder = (modules: ModuleInterface[], { authModule }: { authModule?: ModuleInterface }) => {
-  const modulesNames = modules.reduce(
-    (acc: string[], model) =>
-      model.singularName && model.pluralName ? acc.concat([model.singularName, model.pluralName]) : acc,
-    []
-  );
-
   return modules
     .map(({ attributes, ...module }) => ({
       ...module,
@@ -41,8 +49,8 @@ export const schemasBuilder = (modules: ModuleInterface[], { authModule }: { aut
           : attributes,
     }))
     .map(({ singularName, attributes }) => {
-      return `export const ${singularName?.toLocaleLowerCase()}Schema = z.object({ ${attributes
-        .map(attribute => schemasAttributesBuilder(attribute, { modulesNames }))
+      return `export const ${singularName}Schema = z.object({ ${attributes
+        .map(attribute => schemasAttributesBuilder(attribute))
         .join(", ")} });`;
     })
     .join("\n\n");

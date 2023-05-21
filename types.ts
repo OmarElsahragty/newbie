@@ -3,11 +3,11 @@ export interface AttributeInterface {
   type: string;
   unique?: boolean;
   required?: boolean;
-  hash?: boolean;
   default?: string;
   enum?: string[];
   isArray?: boolean;
   attributes?: AttributeInterface[];
+  isRef?: boolean;
 }
 
 export interface ModuleInterface {

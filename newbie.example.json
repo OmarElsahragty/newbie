@@ -4,7 +4,7 @@
       "auth": { "identifier": "email", "password": "password" },
       "attributes": [
         { "name": "email", "type": "string", "unique": true, "required": true },
-        { "name": "password", "type": "string", "required": true, "hash": true }
+        { "name": "password", "type": "string", "required": true }
       ]
     }
   },

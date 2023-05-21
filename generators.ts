@@ -88,15 +88,35 @@ export const modelGenerator = async (dist: string, module: ModuleInterface) => (
   path: join(dist, "src", "database", "models", `${module.singularName}.model.ts`),
   content: `import { Schema, model } from "mongoose";
 import { schemas } from "../../../constants";
+${module.auth?.password ? 'import { createHash } from "../../libraries";' : ""}
 import { ${capitalizeFirstLetter(module.singularName)}Interface } from "../../types";
 
 const ${module.singularName}Schema = new Schema<${capitalizeFirstLetter(module.singularName)}Interface>(
   {
+    
     isDeleted: { type: Boolean, default: false, required: false },
   },
   { timestamps: true, versionKey: false }
 )
-  .index({ isDeleted: 1 });
+${module.auth?.identifier ? `.index({ ${module.auth.identifier}: 1 })\n` : ""}.index({ isDeleted: 1 });
+
+${
+  module.auth?.password
+    ? `// ************** hash ************** //
+${module.singularName}Schema.pre("save", async function (next) {
+  if (!this.isModified("${module.auth.password}")) return next();
+  if (this.${module.auth.password}) this.${module.auth.password} = await createHash(this.${module.auth.password});
+  next();
+});
+
+${module.singularName}Schema.pre("findOneAndUpdate", async function (next) {
+  const data = this.getUpdate() as ${capitalizeFirstLetter(module.singularName)}Interface;
+  if (data?.${module.auth.password}) data.${module.auth.password} = await createHash(data.${module.auth.password});
+  this.setUpdate(data);
+  next();
+});`
+    : ""
+}
 
 export const ${module.singularName}Model = model<${capitalizeFirstLetter(module.singularName)}Interface>(schemas.${
     module.singularName

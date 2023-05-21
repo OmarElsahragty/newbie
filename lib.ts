@@ -3,6 +3,7 @@ import { parse } from "yaml";
 import Zip from "node-stream-zip";
 import { readFile, pathExists, outputFile, remove } from "fs-extra";
 import { ModuleInterface } from "./types";
+import { setModulesRef } from "./helpers";
 import validator from "./validations";
 import generators from "./generators";
 import modifiers from "./modifiers";
@@ -10,7 +11,7 @@ import modifiers from "./modifiers";
 export default async (yamlFilePath = "./newbie.example.yaml", distDirectoryName = "newbie") => {
   const distPath = join(__dirname, distDirectoryName);
   const data: Record<string, ModuleInterface>[] = await parse(await readFile(join(__dirname, yamlFilePath), "utf8"));
-  const modules = await validator(data);
+  const modules = setModulesRef(await validator(data));
 
   if (await pathExists(distPath)) await remove(distPath);
   const zip = new Zip.async({ file: join(__dirname, "skeleton.zip"), storeEntries: true });
