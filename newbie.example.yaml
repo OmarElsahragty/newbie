@@ -28,11 +28,6 @@
         type: user
         required: true
 
-      - name: visibility
-        type: string
-        default: private
-        enum: [public, private]
-
       - name: comments
         type: object
         isArray: true
@@ -45,3 +40,8 @@
           - name: text
             type: string
             required: true
+
+      - name: visibility
+        type: string
+        default: private
+        enum: [public, private]

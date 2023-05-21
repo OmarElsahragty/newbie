@@ -1,7 +1,7 @@
 import { join } from "path";
-import { capitalizeFirstLetter, writePartialModule } from "./utilities";
 import { ModuleInterface } from "./types";
-import { readFile } from "fs-extra";
+import { schemasBuilder } from "./helpers";
+import { capitalizeFirstLetter, writePartialModule } from "./utilities";
 
 export const routesGenerator = async (dist: string, module: ModuleInterface) => ({
   path: join(dist, "src", "routes", `${module.singularName}.routes.ts`),
@@ -104,15 +104,38 @@ export const ${module.singularName}Model = model<${capitalizeFirstLetter(module.
 `,
 });
 
+export const schemasGenerator = async (dist: string, modules: ModuleInterface[]) => {
+  const authModule = modules.find(({ auth }) => auth?.identifier && auth?.password);
+
+  const content = `import { z } from "zod";
+import * as enums from "./enums";
+
+${
+  !authModule?.auth?.identifier || !authModule?.auth?.password
+    ? ""
+    : `export const authSchema = z.object({
+  ${authModule.auth.identifier}: z.string().email(),
+  ${authModule.auth.password}: z.string(),
+  accessType: z.enum(enums.AccessTypes).optional(),
+});\n`
+}
+\n// ********************************* //\n
+${schemasBuilder(modules, { authModule })}`;
+
+  return { path: join(dist, "src", "types", "schemas.ts"), content };
+};
+
 export default async (distPath: string, modules: ModuleInterface[]) => {
+  await writePartialModule(distPath, modules, schemasGenerator);
+
   await Promise.all(
     modules.map(module => {
       return Promise.all([
-        writePartialModule(distPath, module, modelGenerator),
-        writePartialModule(distPath, module, repositoryGenerator),
-        writePartialModule(distPath, module, serviceGenerator),
-        writePartialModule(distPath, module, controllerGenerator),
         writePartialModule(distPath, module, routesGenerator),
+        writePartialModule(distPath, module, controllerGenerator),
+        writePartialModule(distPath, module, serviceGenerator),
+        writePartialModule(distPath, module, repositoryGenerator),
+        writePartialModule(distPath, module, modelGenerator),
       ]);
     })
   );

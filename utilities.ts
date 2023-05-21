@@ -12,5 +12,5 @@ export const writePartialModule = async <T>(
   generator: (dist: string, module: T) => Promise<{ path: string; content: string }>
 ) => {
   const file = await generator(dist, module);
-  return outputFile(resolve(file.path), file.content, { encoding: "utf8" });
+  return outputFile(resolve(file.path), file.content.trim(), { encoding: "utf8" });
 };
