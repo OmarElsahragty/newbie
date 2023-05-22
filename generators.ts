@@ -2,7 +2,7 @@ import { join } from "path";
 import { plural } from "pluralize";
 import { ModuleInterface } from "./types";
 import { mongooseAttributesBuilder, zodBuilder } from "./helpers";
-import { capitalizeFirstLetter, writePartialModule } from "./utilities";
+import { camelPascalCase, writePartialModule } from "./utilities";
 
 export const routesGenerator = async (dist: string, module: ModuleInterface) => {
   const content = `
@@ -33,38 +33,72 @@ export default router;`;
 
 export const controllerGenerator = async (dist: string, module: ModuleInterface) => {
   const content = `
-  import { Request, Response, NextFunction } from "express";
+  ${module.auth?.identifier && module.auth.password ? 'import { Request, Response, NextFunction } from "express";' : ""}
   import DefaultController from "./default.controller";
   import { ${module.singularName}Service } from "../services";
-  import { ${capitalizeFirstLetter(module.singularName)}Interface } from "../types";
+  import { ${camelPascalCase(module.singularName)}Interface } from "../types";
   
-  class ${capitalizeFirstLetter(module.singularName)}Controller extends DefaultController<${capitalizeFirstLetter(
+  class ${camelPascalCase(module.singularName)}Controller extends DefaultController<${camelPascalCase(
     module.singularName
   )}Interface> {
     constructor() {
       super(${module.singularName}Service);
     }
+
+    ${
+      module.auth?.identifier && module.auth.password
+        ? `
+      authenticate = async (req: Request, res: Response, next: NextFunction) => {
+        return this.response(${module.singularName}Service.authenticate(req.body.${module.auth.identifier}, req.body.${module.auth.password}), res, next);
+      };`
+        : ""
+    }
   }
 
-  export default new ${capitalizeFirstLetter(module.singularName)}Controller();`;
+  export default new ${camelPascalCase(module.singularName)}Controller();`;
 
   return { path: join(dist, "/src", "controllers", `/${module.singularName}.controller.ts`), content };
 };
 
 export const serviceGenerator = async (dist: string, module: ModuleInterface) => {
-  const content = `
-  import DefaultRepository from "./default.repository";
-  import { ${capitalizeFirstLetter(module.singularName)}Interface } from "../../types";
-  import { ${module.singularName}Model } from "../models";
+  const importedTypes = [`${camelPascalCase(module.singularName)}Interface`];
+  if (module.auth?.identifier && module.auth.password) importedTypes.push("UnauthorizedException");
 
-  class ${capitalizeFirstLetter(module.singularName)}Repository extends DefaultRepository<${capitalizeFirstLetter(
+  const content = `
+  ${module.auth?.identifier && module.auth.password ? 'import { sign } from "jsonwebtoken";' : ""}
+  import DefaultService from "./default.service";
+  import { ${importedTypes.join(", ")} } from "../types";
+  import { ${module.singularName}Repository } from "../database/repositories";
+  ${
+    module.auth?.identifier && module.auth.password
+      ? 'import { verifyHash } from "../libraries"; import config from "../../config";'
+      : ""
+  }
+
+  class ${camelPascalCase(module.singularName)}Service extends DefaultService<${camelPascalCase(
     module.singularName
   )}Interface> {
     constructor() {
-      super(${module.singularName}Model);
+      super(${module.singularName}Repository);
+    }
+    ${
+      module.auth?.identifier && module.auth.password
+        ? `
+      // ************** authentication ************** //
+      authenticate = async (email: string, password: string): Promise<{ client: Partial<UserInterface>; token: string }> => {
+        const client = await ${module.singularName}Repository.findOne({ filter: { email, isDeleted: false } });
+        if (!client || client.accessType === "DENIED" || !client.${module.auth.password} || !(await verifyHash(client.${module.auth.password}, password))) {
+          throw new UnauthorizedException("Incorrect ${module.auth.identifier} or password");
+        }
+    
+        return { client, token: \`Bearer \${sign({ id: client._id }, config.jwt.secret, { expiresIn: config.jwt.lifeTime })}\` };
+      };`
+        : ""
     }
   }
-  export const ${module.singularName}Repository = new ${capitalizeFirstLetter(module.singularName)}Repository();`;
+
+
+  export const ${module.singularName}Service = new ${camelPascalCase(module.singularName)}Service();`;
 
   return { path: join(dist, "src", "services", `${module.singularName}.service.ts`), content };
 };
@@ -72,19 +106,19 @@ export const serviceGenerator = async (dist: string, module: ModuleInterface) =>
 export const repositoryGenerator = async (dist: string, module: ModuleInterface) => {
   const content = `
   import DefaultRepository from "./default.repository";
-  import { ${capitalizeFirstLetter(module.singularName)}Interface } from "../../types";
+  import { ${camelPascalCase(module.singularName)}Interface } from "../../types";
   import { ${module.singularName}Model } from "../models";
   
-  class ${capitalizeFirstLetter(module.singularName)}Repository extends DefaultRepository<${capitalizeFirstLetter(
+  class ${camelPascalCase(module.singularName)}Repository extends DefaultRepository<${camelPascalCase(
     module.singularName
   )}Interface> {
     constructor() {
       super(${module.singularName}Model);
     }
   }
-  export const ${module.singularName}Repository = new ${capitalizeFirstLetter(module.singularName)}Repository();`;
+  export const ${module.singularName}Repository = new ${camelPascalCase(module.singularName)}Repository();`;
 
-  return { path: join(dist, "src", "repositories", `${module.singularName}.repository.ts`), content };
+  return { path: join(dist, "src", "database", "repositories", `${module.singularName}.repository.ts`), content };
 };
 
 export const modelGenerator = async (dist: string, module: ModuleInterface) => {
@@ -96,8 +130,8 @@ export const modelGenerator = async (dist: string, module: ModuleInterface) => {
 
   const importedTypes = attributes
     ?.filter(attribute => attribute.enum)
-    .map(({ name }) => `${capitalizeFirstLetter(plural(name))}`)
-    .concat([`${capitalizeFirstLetter(module.singularName)}Interface`]);
+    .map(({ name }) => `${camelPascalCase(plural(name))}`)
+    .concat([`${camelPascalCase(module.singularName)}Interface`]);
 
   const content = `
   import { Schema, model } from "mongoose";
@@ -105,7 +139,7 @@ export const modelGenerator = async (dist: string, module: ModuleInterface) => {
   import { ${importedTypes.join(", ")} } from "../../types";
   ${module.auth?.password ? 'import { createHash } from "../../libraries";' : ""}
 
-  const ${module.singularName}Schema = new Schema<${capitalizeFirstLetter(module.singularName)}Interface>(
+  const ${module.singularName}Schema = new Schema<${camelPascalCase(module.singularName)}Interface>(
     {
       ${mongooseAttributesBuilder(attributes)},
       isDeleted: { type: Boolean, default: false, required: false },
@@ -125,7 +159,7 @@ export const modelGenerator = async (dist: string, module: ModuleInterface) => {
       });
       
       ${module.singularName}Schema.pre("findOneAndUpdate", async function (next) {
-        const data = this.getUpdate() as ${capitalizeFirstLetter(module.singularName)}Interface;
+        const data = this.getUpdate() as ${camelPascalCase(module.singularName)}Interface;
         if (data?.${module.auth.password}) data.${module.auth.password} = await createHash(data.${
             module.auth.password
           });
@@ -135,7 +169,7 @@ export const modelGenerator = async (dist: string, module: ModuleInterface) => {
         : ""
     }
     
-    export const ${module.singularName}Model = model<${capitalizeFirstLetter(module.singularName)}Interface>(schemas.${
+    export const ${module.singularName}Model = model<${camelPascalCase(module.singularName)}Interface>(schemas.${
     module.singularName
   }, ${module.singularName}Schema);`;
 
@@ -158,7 +192,7 @@ export const schemasGenerator = async (dist: string, modules: ModuleInterface[])
     });\n`
   }
   \n// ********************************* //\n
-  ${zodBuilder(modules, { authModule })}`;
+  ${zodBuilder(modules)}`;
 
   return { path: join(dist, "src", "types", "schemas.ts"), content };
 };

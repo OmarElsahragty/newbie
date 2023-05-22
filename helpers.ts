@@ -1,5 +1,6 @@
+import { camelCase } from "camel-case";
 import { plural, singular } from "pluralize";
-import { capitalizeFirstLetter } from "./utilities";
+import { camelPascalCase } from "./utilities";
 import { AttributeInterface, ModuleInterface } from "./types";
 
 const setAttributesRef = (attributes: AttributeInterface[], modulesNames: string[]): AttributeInterface[] => {
@@ -23,7 +24,7 @@ export const setModulesRef = (modules: ModuleInterface[]) => {
 const zodAttributesBuilder = (attribute: AttributeInterface) => {
   let type = attribute.isRef ? `${singular(attribute.type)}Schema` : `z.${attribute.type}()`;
 
-  if (attribute.enum) type = `z.enum(enums.${capitalizeFirstLetter(plural(attribute.name))})`;
+  if (attribute.enum) type = `z.enum(enums.${camelPascalCase(plural(attribute.name))})`;
   if (attribute.type === "object" && attribute.attributes) {
     type = `z.object({ ${attribute.attributes.map(attribute => zodAttributesBuilder(attribute)).join(", ")} })`;
   }
@@ -34,24 +35,26 @@ const zodAttributesBuilder = (attribute: AttributeInterface) => {
   return `${attribute.name}: ${type}`;
 };
 
-export const zodBuilder = (modules: ModuleInterface[], { authModule }: { authModule?: ModuleInterface }) => {
+export const zodBuilder = (modules: ModuleInterface[]) => {
   return modules
     .map(({ attributes, ...module }) => ({
       ...module,
       attributes:
-        authModule && authModule.singularName === module.singularName
+        module.auth?.identifier && module.auth.password
           ? attributes.filter(
               attribute =>
-                authModule?.auth &&
-                authModule.auth.identifier !== attribute.name &&
-                authModule.auth.password !== attribute.name
+                module?.auth && module.auth.identifier !== attribute.name && module.auth.password !== attribute.name
             )
           : attributes,
     }))
-    .map(({ singularName, attributes }) => {
-      return `export const ${singularName}Schema = z.object({ ${attributes
-        .map(attribute => zodAttributesBuilder(attribute))
-        .join(", ")} });`;
+    .map(module => {
+      const isAuthModule = module.auth?.identifier && module.auth.password;
+
+      return `export const ${module.singularName}Schema = ${
+        isAuthModule ? "authSchema.merge(" : ""
+      }z.object({ ${module.attributes.map(attribute => zodAttributesBuilder(attribute)).join(", ")} })${
+        isAuthModule ? ")" : ""
+      };`;
     })
     .join("\n\n");
 };
@@ -59,7 +62,7 @@ export const zodBuilder = (modules: ModuleInterface[], { authModule }: { authMod
 export const mongooseAttributesBuilder = (attributes: AttributeInterface[]) => {
   return attributes
     .map(attribute => {
-      let type = `${attribute.isRef ? "Schema.Types.ObjectId" : capitalizeFirstLetter(attribute.type)}`;
+      let type = `${attribute.isRef ? "Schema.Types.ObjectId" : camelPascalCase(attribute.type)}`;
       if (attribute.type === "object" && attribute.attributes) {
         type = `new Schema({ ${mongooseAttributesBuilder(attribute.attributes)} },
         { _id: true, versionKey: false, timestamps: true }
@@ -71,13 +74,13 @@ export const mongooseAttributesBuilder = (attributes: AttributeInterface[]) => {
       let unique = attribute.unique ? "unique: true" : "";
       if (attribute.unique && !attribute.required) unique = `${unique}, sparse: true`;
 
-      return `${attribute.name.toLowerCase()}:  { ${[
+      return `${camelCase(attribute.name)}:  { ${[
         `type: ${type}`,
         unique,
         attribute.required ? "required: true" : "",
         attribute.default ? `default: ${JSON.stringify(attribute.default)}` : "",
-        attribute.isRef ? `ref: schemas.${singular(attribute.type).toLowerCase()}` : "",
-        attribute.enum ? `enum: ${capitalizeFirstLetter(plural(attribute.name))}` : "",
+        attribute.isRef ? `ref: schemas.${camelCase(singular(attribute.type))}` : "",
+        attribute.enum ? `enum: ${camelPascalCase(plural(attribute.name))}` : "",
       ]
         .filter(item => item)
         .join(", ")} }`;

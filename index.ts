@@ -1,3 +1,3 @@
-import newbie from "./lib";
+import { newbieGenerator } from "./lib";
 
-newbie();
+newbieGenerator();

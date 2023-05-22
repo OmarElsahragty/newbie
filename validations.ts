@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { camelCase } from "camel-case";
 import { plural, singular } from "pluralize";
 import { fromZodError } from "zod-validation-error";
 import { AttributeInterface, ModuleInterface } from "./types";
@@ -32,8 +33,8 @@ export default async (data: any[]) => {
         // TODO: EXTRA VALIDATION
 
         return Object.assign(module, {
-          singularName: singular(moduleName).toLowerCase(),
-          pluralName: plural(moduleName).toLowerCase(),
+          singularName: camelCase(singular(moduleName)),
+          pluralName: camelCase(plural(moduleName)),
         }) as ModuleInterface;
       })
     );
