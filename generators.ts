@@ -1,10 +1,11 @@
 import { join } from "path";
 import { plural } from "pluralize";
+import kebabCase from "kebab-case";
 import { ModuleInterface } from "./types";
-import { mongooseAttributesBuilder, zodBuilder } from "./helpers";
 import { camelPascalCase, writePartialModule } from "./utilities";
+import { mongooseAttributesBuilder, zodBuilder, populationsBuilder } from "./helpers";
 
-export const routesGenerator = async (dist: string, module: ModuleInterface) => {
+const routesGenerator = async (dist: string, module: ModuleInterface) => {
   const content = `
   import { Router } from "express";
   import { ${module.singularName}Controller } from "../controllers";
@@ -14,24 +15,28 @@ export const routesGenerator = async (dist: string, module: ModuleInterface) => 
 const router = Router();
 
 router
-  .route("/${module.pluralName}")
+  .route("/${kebabCase(module.pluralName!)}")
   .get(${module.singularName}Controller.list)
-  .post(validateMiddleware(${module.singularName}Schema, { isArray: true }), ${module.singularName}Controller.bulkCreate);
+  .post(validateMiddleware(${module.singularName}Schema, { isArray: true }), ${
+    module.singularName
+  }Controller.bulkCreate);
 
-router.route("/${module.singularName}.").post(validateMiddleware(${module.singularName}Schema), ${module.singularName}Controller.create);
+router.route("/${kebabCase(module.singularName!)}").post(validateMiddleware(${module.singularName}Schema), ${
+    module.singularName
+  }Controller.create);
 
 router
-  .route("/${module.singularName}./:id")
-  .get(${module.singularName}Controller.get)
+  .route("/${kebabCase(module.singularName!)}/:id")
+  .get(${module.singularName}Controller.fetch)
   .put(validateMiddleware(${module.singularName}Schema), ${module.singularName}Controller.update)
   .delete(${module.singularName}Controller.delete);
 
 export default router;`;
 
-  return { path: join(dist, "src", "routes", `${module.singularName}.routes.ts`), content };
+  return { path: join(dist, "src", "routes", `${kebabCase(module.singularName!)}.routes.ts`), content };
 };
 
-export const controllerGenerator = async (dist: string, module: ModuleInterface) => {
+const controllerGenerator = async (dist: string, module: ModuleInterface) => {
   const content = `
   ${module.auth?.identifier && module.auth.password ? 'import { Request, Response, NextFunction } from "express";' : ""}
   import DefaultController from "./default.controller";
@@ -57,10 +62,10 @@ export const controllerGenerator = async (dist: string, module: ModuleInterface)
 
   export default new ${camelPascalCase(module.singularName)}Controller();`;
 
-  return { path: join(dist, "/src", "controllers", `/${module.singularName}.controller.ts`), content };
+  return { path: join(dist, "/src", "controllers", `/${kebabCase(module.singularName!)}.controller.ts`), content };
 };
 
-export const serviceGenerator = async (dist: string, module: ModuleInterface) => {
+const serviceGenerator = async (dist: string, module: ModuleInterface) => {
   const importedTypes = [`${camelPascalCase(module.singularName)}Interface`];
   if (module.auth?.identifier && module.auth.password) importedTypes.push("UnauthorizedException");
 
@@ -91,7 +96,7 @@ export const serviceGenerator = async (dist: string, module: ModuleInterface) =>
           throw new UnauthorizedException("Incorrect ${module.auth.identifier} or password");
         }
     
-        return { client, token: \`Bearer \${sign({ id: client._id }, config.jwt.secret, { expiresIn: config.jwt.lifeTime })}\` };
+        return { client, token: \`Bearer \${sign({ _id: client._id }, config.jwt.secret, { expiresIn: config.jwt.lifeTime })}\` };
       };`
         : ""
     }
@@ -100,10 +105,10 @@ export const serviceGenerator = async (dist: string, module: ModuleInterface) =>
 
   export const ${module.singularName}Service = new ${camelPascalCase(module.singularName)}Service();`;
 
-  return { path: join(dist, "src", "services", `${module.singularName}.service.ts`), content };
+  return { path: join(dist, "src", "services", `${kebabCase(module.singularName!)}.service.ts`), content };
 };
 
-export const repositoryGenerator = async (dist: string, module: ModuleInterface) => {
+const repositoryGenerator = async (dist: string, module: ModuleInterface) => {
   const content = `
   import DefaultRepository from "./default.repository";
   import { ${camelPascalCase(module.singularName)}Interface } from "../../types";
@@ -113,15 +118,18 @@ export const repositoryGenerator = async (dist: string, module: ModuleInterface)
     module.singularName
   )}Interface> {
     constructor() {
-      super(${module.singularName}Model);
+      super(${module.singularName}Model, ${populationsBuilder(module)});
     }
   }
   export const ${module.singularName}Repository = new ${camelPascalCase(module.singularName)}Repository();`;
 
-  return { path: join(dist, "src", "database", "repositories", `${module.singularName}.repository.ts`), content };
+  return {
+    path: join(dist, "src", "database", "repositories", `${kebabCase(module.singularName!)}.repository.ts`),
+    content,
+  };
 };
 
-export const modelGenerator = async (dist: string, module: ModuleInterface) => {
+const modelGenerator = async (dist: string, module: ModuleInterface) => {
   const attributes = module.auth?.identifier
     ? module.attributes.concat([
         { name: "accessType", type: "string", enum: ["ADMIN", "APPROVED", "DENIED"], default: "DENIED" },
@@ -173,10 +181,10 @@ export const modelGenerator = async (dist: string, module: ModuleInterface) => {
     module.singularName
   }, ${module.singularName}Schema);`;
 
-  return { path: join(dist, "src", "database", "models", `${module.singularName}.model.ts`), content };
+  return { path: join(dist, "src", "database", "models", `${kebabCase(module.singularName!)}.model.ts`), content };
 };
 
-export const schemasGenerator = async (dist: string, modules: ModuleInterface[]) => {
+const schemasGenerator = async (dist: string, modules: ModuleInterface[]) => {
   const authModule = modules.find(({ auth }) => auth?.identifier && auth?.password);
   const content = `
   import { z } from "zod";

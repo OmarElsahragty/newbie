@@ -30,7 +30,7 @@ export default async (data: any[]) => {
       data.map(async item => {
         const moduleName = Object.keys(item)[0];
         const module = await moduleSchema.parseAsync(item[moduleName]);
-        // TODO: EXTRA VALIDATION
+        // TODO: Add extra validation
 
         return Object.assign(module, {
           singularName: camelCase(singular(moduleName)),

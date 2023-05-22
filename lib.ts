@@ -12,24 +12,29 @@ export const newbieGenerator = async (
   yamlFilePath = join(__dirname, "newbie.example.yaml"),
   distPath = join(__dirname, "newbie")
 ) => {
-  const modules = setModulesRef(await validator(await parse(await readFile(resolve(yamlFilePath), "utf8"))));
-  const zip = new Zip.async({ file: join(__dirname, "skeleton.zip"), storeEntries: true });
+  try {
+    const modules = setModulesRef(await validator(await parse(await readFile(resolve(yamlFilePath), "utf8"))));
+    const zip = new Zip.async({ file: join(__dirname, "skeleton.zip"), storeEntries: true });
 
-  const entries = await zip.entries();
-  await Promise.all(
-    Object.values(entries).map(async entry => {
-      if (entry.isDirectory) return;
-      return outputFile(join(distPath, entry.name), (await zip.entryData(entry.name)).toString("utf8"), {
-        encoding: "utf8",
-      });
-    })
-  );
+    const entries = await zip.entries();
+    await Promise.all(
+      Object.values(entries).map(async entry => {
+        if (entry.isDirectory) return;
+        return outputFile(join(distPath, entry.name), (await zip.entryData(entry.name)).toString("utf8"), {
+          encoding: "utf8",
+        });
+      })
+    );
 
-  await zip.close();
+    await zip.close();
 
-  await generators(distPath, modules);
+    await generators(distPath, modules);
 
-  await modifiers(distPath, modules);
+    await modifiers(distPath, modules);
 
-  await exec(`prettier --write ${distPath}`);
+    await exec(`prettier --write ${distPath}`);
+  } catch (error: any) {
+    console.error(error);
+    process.exit(1);
+  }
 };

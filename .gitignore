@@ -79,6 +79,7 @@ yarn-error.log*
 
 # local
 /local
+/skeleton
 
 # dist
 /newbie

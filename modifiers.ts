@@ -2,9 +2,10 @@ import { join } from "path";
 import { plural } from "pluralize";
 import { readFile } from "fs-extra";
 import { camelPascalCase, writePartialModule } from "./utilities";
+import { postmanCollectionBuilder } from "./helpers";
 import { ModuleInterface } from "./types";
 
-export const constantsModifier = async (dist: string, modules: ModuleInterface[]) => {
+const constantsModifier = async (dist: string, modules: ModuleInterface[]) => {
   const path = join(dist, "constants", "index.ts");
   const file = (await readFile(path, "utf8")).trim();
 
@@ -16,7 +17,7 @@ export const constantsModifier = async (dist: string, modules: ModuleInterface[]
   return { path, content };
 };
 
-export const typesModifier = async (dist: string, modules: ModuleInterface[]) => {
+const typesModifier = async (dist: string, modules: ModuleInterface[]) => {
   const path = join(dist, "src", "types", "types.ts");
   const file = (await readFile(path, "utf8")).trim();
 
@@ -45,7 +46,7 @@ export const typesModifier = async (dist: string, modules: ModuleInterface[]) =>
   return { path, content };
 };
 
-export const enumsModifier = async (dist: string, modules: ModuleInterface[]) => {
+const enumsModifier = async (dist: string, modules: ModuleInterface[]) => {
   const path = join(dist, "src", "types", "enums.ts");
   const file = (await readFile(path, "utf8")).trim();
 
@@ -80,29 +81,7 @@ export const enumsModifier = async (dist: string, modules: ModuleInterface[]) =>
   return { path, content };
 };
 
-export const seederModifier = async (dist: string, modules: ModuleInterface[]) => {
-  const path = join(dist, "src", "database", "seeds", "seeder.ts");
-  const file = (await readFile(path, "utf8")).trim();
-
-  const authModule = modules.find(({ auth }) => auth?.identifier && auth?.password);
-
-  const content = file.replaceAll(
-    "$$$ auth seed $$$",
-    authModule?.singularName && authModule.auth?.identifier && authModule.auth.password
-      ? `
-    await repositories.${authModule.singularName}Repository.create({
-      // TODO: Add rest of attributes
-      ${authModule.auth.identifier}: "admin@email.com",
-      ${authModule.auth.password}: "admin",
-      accessType: "ADMIN",
-    });`
-      : ""
-  );
-
-  return { path, content };
-};
-
-export const routesIndexModifier = async (dist: string, modules: ModuleInterface[]) => {
+const routesIndexModifier = async (dist: string, modules: ModuleInterface[]) => {
   const path = join(dist, "src", "routes", "index.ts");
   const file = (await readFile(path, "utf8")).trim();
 
@@ -143,7 +122,7 @@ export const routesIndexModifier = async (dist: string, modules: ModuleInterface
   return { path, content };
 };
 
-export const controllersIndexModifier = async (dist: string, modules: ModuleInterface[]) => {
+const controllersIndexModifier = async (dist: string, modules: ModuleInterface[]) => {
   const path = join(dist, "src", "controllers", "index.ts");
   const file = (await readFile(path, "utf8")).trim();
 
@@ -154,7 +133,7 @@ export const controllersIndexModifier = async (dist: string, modules: ModuleInte
   return { path, content };
 };
 
-export const servicesIndexModifier = async (dist: string, modules: ModuleInterface[]) => {
+const servicesIndexModifier = async (dist: string, modules: ModuleInterface[]) => {
   const path = join(dist, "src", "services", "index.ts");
   const file = (await readFile(path, "utf8")).trim();
 
@@ -165,7 +144,7 @@ export const servicesIndexModifier = async (dist: string, modules: ModuleInterfa
   return { path, content };
 };
 
-export const repositoriesIndexModifier = async (dist: string, modules: ModuleInterface[]) => {
+const repositoriesIndexModifier = async (dist: string, modules: ModuleInterface[]) => {
   const path = join(dist, "src", "database", "repositories", "index.ts");
   const file = (await readFile(path, "utf8")).trim();
 
@@ -176,7 +155,7 @@ export const repositoriesIndexModifier = async (dist: string, modules: ModuleInt
   return { path, content };
 };
 
-export const modelsIndexModifier = async (dist: string, modules: ModuleInterface[]) => {
+const modelsIndexModifier = async (dist: string, modules: ModuleInterface[]) => {
   const path = join(dist, "src", "database", "models", "index.ts");
   const file = (await readFile(path, "utf8")).trim();
 
@@ -187,7 +166,7 @@ export const modelsIndexModifier = async (dist: string, modules: ModuleInterface
   return { path, content };
 };
 
-export const authGuardModifier = async (dist: string, modules: ModuleInterface[]) => {
+const authGuardModifier = async (dist: string, modules: ModuleInterface[]) => {
   const path = join(dist, "src", "guards", "authorization.guard.ts");
   const file = (await readFile(path, "utf8")).trim();
 
@@ -197,7 +176,17 @@ export const authGuardModifier = async (dist: string, modules: ModuleInterface[]
     ? file
         .replaceAll("$$$ auth interface $$$", `${camelPascalCase(authModule.singularName)}Interface`)
         .replaceAll("$$$ import auth service $$$", `import { ${authModule.singularName}Service } from "../services";`)
+        .replaceAll("$$$ auth service $$$", `${authModule.singularName}Service`)
     : undefined;
+
+  return { path, content };
+};
+
+const postmanCollectionModifier = async (dist: string, modules: ModuleInterface[]) => {
+  const path = join(dist, "docs", "postman-collection.json");
+  const file = (await readFile(path, "utf8")).trim();
+
+  const content = file.replaceAll("$$$ modules routes $$$", postmanCollectionBuilder(modules));
 
   return { path, content };
 };
@@ -207,12 +196,12 @@ export default async (distPath: string, modules: ModuleInterface[]) => {
     writePartialModule(distPath, modules, constantsModifier),
     writePartialModule(distPath, modules, enumsModifier),
     writePartialModule(distPath, modules, typesModifier),
-    writePartialModule(distPath, modules, seederModifier),
     writePartialModule(distPath, modules, routesIndexModifier),
     writePartialModule(distPath, modules, controllersIndexModifier),
     writePartialModule(distPath, modules, servicesIndexModifier),
     writePartialModule(distPath, modules, repositoriesIndexModifier),
     writePartialModule(distPath, modules, modelsIndexModifier),
     writePartialModule(distPath, modules, authGuardModifier),
+    writePartialModule(distPath, modules, postmanCollectionModifier),
   ]);
 };

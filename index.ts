@@ -1,3 +1,3 @@
 import { newbieGenerator } from "./lib";
 
-newbieGenerator();
+newbieGenerator(undefined, "C:\\Users\\omar_\\Desktop\\newbie");

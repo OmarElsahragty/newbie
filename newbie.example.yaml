@@ -4,6 +4,14 @@
       password: password
 
     attributes:
+      - name: first_name
+        type: string
+        required: true
+
+      - name: last_name
+        type: string
+        required: true
+
       - name: email
         type: string
         unique: true
@@ -12,6 +20,9 @@
       - name: password
         type: string
         required: true
+
+      - name: bio
+        type: string
 
 - posts:
     attributes:
@@ -23,7 +34,7 @@
         type: string
         required: true
 
-      - name: author
+      - name: author_id
         type: user
         required: true
 
@@ -32,15 +43,90 @@
         array: true
 
         attributes:
-          - name: writer
+          - name: writer_id
             type: user
             required: true
 
-          - name: text
+          - name: content
             type: string
             required: true
+
+      - name: tags
+        type: object
+        array: true
+
+        attributes:
+          - name: name
+            type: string
+            required: true
+
+      - name: likes
+        type: user
+        array: true
 
       - name: visibility
         type: string
         default: private
         enum: [public, private]
+
+- messages:
+    attributes:
+      - name: sender_id
+        type: user
+        required: true
+
+      - name: recipient_id
+        type: user
+        required: true
+
+      - name: subject
+        type: string
+        required: true
+
+      - name: body
+        type: string
+        required: true
+
+      - name: read_at
+        type: date
+
+- notifications:
+    attributes:
+      - name: type
+        type: string
+        required: true
+
+      - name: data
+        type: string
+
+      - name: read_at
+        type: date
+
+- friendships:
+    attributes:
+      - name: user_id
+        type: user
+        required: true
+
+      - name: friend_id
+        type: user
+        required: true
+
+      - name: status
+        type: string
+        default: pending
+        enum: [pending, accepted, rejected]
+
+      - name: initiated_by
+        type: string
+        default: user
+        enum: [user, friend]
+
+      - name: initiated_at
+        type: date
+
+      - name: accepted_at
+        type: date
+
+      - name: rejected_at
+        type: date

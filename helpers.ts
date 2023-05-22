@@ -1,3 +1,4 @@
+import kebabCase from "kebab-case";
 import { camelCase } from "camel-case";
 import { plural, singular } from "pluralize";
 import { camelPascalCase } from "./utilities";
@@ -32,7 +33,7 @@ const zodAttributesBuilder = (attribute: AttributeInterface) => {
   if (!attribute.required) type = `${type}.optional()`;
   if (attribute.array) type = `${type}.array()`;
 
-  return `${attribute.name}: ${type}`;
+  return `${camelCase(attribute.name)}: ${type}`;
 };
 
 export const zodBuilder = (modules: ModuleInterface[]) => {
@@ -65,7 +66,7 @@ export const mongooseAttributesBuilder = (attributes: AttributeInterface[]) => {
       let type = `${attribute.isRef ? "Schema.Types.ObjectId" : camelPascalCase(attribute.type)}`;
       if (attribute.type === "object" && attribute.attributes) {
         type = `new Schema({ ${mongooseAttributesBuilder(attribute.attributes)} },
-        { _id: true, versionKey: false, timestamps: true }
+      { _id: true, versionKey: false, timestamps: true }
         )`;
       }
       if (attribute.type === "string") type = `${type}, trim: true`;
@@ -86,4 +87,224 @@ export const mongooseAttributesBuilder = (attributes: AttributeInterface[]) => {
         .join(", ")} }`;
     })
     .join(",\n");
+};
+
+const flattenAttributes = (moduleAttributes: AttributeInterface[], parent?: string) => {
+  let attributes: AttributeInterface[] = [];
+
+  moduleAttributes.forEach(({ name, ...attribute }) => {
+    if (attribute?.attributes?.length)
+      attributes = attributes.concat(flattenAttributes(attribute.attributes, camelCase(name)));
+    else return attributes.push({ ...attribute, name: parent ? `${parent}.${camelCase(name)}` : camelCase(name) });
+  });
+
+  return attributes;
+};
+
+export const populationsBuilder = (module: ModuleInterface) => {
+  const populations = flattenAttributes(module.attributes)
+    .filter(attribute => attribute.isRef)
+    .map(({ name }) => `{ path: "${name}" }`);
+
+  return `[ ${populations.join(", ").trim()} ]`;
+};
+
+export const postmanCollectionBuilder = (modules: ModuleInterface[]) => {
+  const authModule = modules.find(module => module.auth?.identifier && module.auth.password);
+
+  const collection = modules.map(module => {
+    return `
+  {
+    "name": "${kebabCase(module.singularName!)}",
+    "item": [
+      {
+        "name": "fetch list",
+        "request": {
+          "method": "GET",
+          "header": [],
+          "url": {
+            "raw": "{{base-URL}}/${kebabCase(module.pluralName!)}",
+            "host": ["{{base-URL}}"],
+            "path": ["${kebabCase(module.pluralName!)}"],
+            "query": [
+              {
+                "key": "limit",
+                "value": "10",
+                "description": "(default: 10)"
+              },
+              {
+                "key": "page",
+                "value": "0",
+                "description": "(default: 0)"
+              },
+              {
+                "key": "sort",
+                "value": "",
+                "disabled": true
+              },
+              {
+                "key": "direction",
+                "value": "1",
+                "description": "{ direction: -1; asc => 1 } (default: 1)",
+                "disabled": true
+              },
+              {
+                "key": "showAll",
+                "value": "true",
+                "description": "(default: false)",
+                "disabled": true
+              },
+              {
+                "key": "projection",
+                "description": "selected felids comma separated",
+                "disabled": true
+              },
+              {
+                "key": "filter",
+                "description": "stringified search filter",
+                "disabled": true
+              },
+              {
+                "key": "operation",
+                "description": "search filter operation { operation: and | or } (default: and)",
+                "disabled": true
+              },
+              {
+                "key": "intervals",
+                "description": "intervals search filter { filed: string;  minimum?: number;  maximum?: number; }[]",
+                "disabled": true
+              }
+            ]
+          }
+        },
+        "response": []
+      },
+      {
+        "name": "fetch item",
+        "request": {
+          "method": "GET",
+          "header": [],
+          "url": {
+            "raw": "{{base-URL}}/${kebabCase(module.singularName!)}/:id",
+            "host": ["{{base-URL}}"],
+            "path": ["${kebabCase(module.singularName!)}", ":id"],
+            "variable": [
+              {
+                "key": "id",
+                "value": ""
+              }
+            ]
+          }
+        },
+        "response": []
+      },
+      {
+        "name": "create",
+        "request": {
+          "method": "POST",
+          "header": [],
+          "body": {},
+          "url": {
+            "raw": "{{base-URL}}/${kebabCase(module.singularName!)}",
+            "host": ["{{base-URL}}"],
+            "path": ["${kebabCase(module.singularName!)}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "bulk-create",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {},
+            "url": {
+              "raw": "{{base-URL}}/${kebabCase(module.pluralName!)}",
+              "host": ["{{base-URL}}"],
+              "path": ["${kebabCase(module.pluralName!)}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {},
+            "url": {
+              "raw": "{{base-URL}}/${kebabCase(module.singularName!)}/:id",
+              "host": ["{{base-URL}}"],
+              "path": ["${kebabCase(module.singularName!)}", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                  }
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "delete",
+            "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base-URL}}/${kebabCase(module.singularName!)}/:id",
+              "host": ["{{base-URL}}"],
+              "path": ["${kebabCase(module.singularName!)}", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }`;
+  });
+
+  if (authModule) {
+    collection.unshift(
+      `
+      {
+        "name": "auth",
+        "items": [
+          {
+            "name": "authenticate",
+            "request": {
+              "method": "POST",
+              "header": [],
+              "url": {
+                "raw": "{{base-URL}}/authenticate",
+                "host": ["{{base-URL}}"],
+                "path": ["authenticate"]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "register",
+            "request": {
+              "method": "POST",
+              "header": [],
+              "url": {
+                "raw": "{{base-URL}}/register",
+                "host": ["{{base-URL}}"],
+                "path": ["register"]
+              }
+            },
+            "response": []
+          }
+        ]
+      }`
+    );
+  }
+
+  return collection.join(",\n");
 };
