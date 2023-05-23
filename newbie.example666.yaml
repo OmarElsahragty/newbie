@@ -1,0 +1,337 @@
+- Users:
+  auth:
+    identifier: email
+    password: password
+  attributes:
+    - name: first_name
+      type: string
+      required: true
+    - name: last_name
+      type: string
+      required: true
+    - name: email
+      type: string
+      unique: true
+      required: true
+    - name: password
+      type: string
+      required: true
+    - name: bio
+      type: string
+
+- Posts:
+  attributes:
+    - name: title
+      type: string
+      required: true
+    - name: content
+      type: string
+      required: true
+    - name: author_id
+      type: user
+      required: true
+    - name: comments
+      type: object
+      array: true
+      attributes:
+        - name: writer_id
+          type: user
+          required: true
+        - name: content
+          type: string
+          required: true
+    - name: tags
+      type: object
+      array: true
+      attributes:
+        - name: name
+          type: string
+          required: true
+    - name: likes
+      type: user
+      array: true
+    - name: visibility
+      type: string
+      Default: private
+      Enum: [public, private]
+
+- Messages:
+  attributes:
+    - name: sender_id
+      type: user
+      required: true
+    - name: recipient_id
+      type: user
+      required: true
+    - name: subject
+      type: string
+      required: true
+    - name: body
+      type: string
+      required: true
+    - name: read_at
+      type: date
+
+- Notifications:
+  attributes:
+    - name: type
+      type: string
+      required: true
+    - name: data
+      type: string
+    - name: read_at
+      type: date
+
+- Friendships:
+  attributes:
+    - name: user_id
+      type: user
+      required: true
+    - name: friend_id
+      type: user
+      required: true
+    - name: status
+      type: string
+      Default: pending
+      Enum: [pending, accepted, rejected]
+    - name: initiated_by
+      type: string
+      Default: user
+      Enum: [user, friend]
+    - name: initiated_at
+      type: date
+    - name: accepted_at
+      type: date
+    - name: rejected_at
+      type: date
+
+- Comments:
+  attributes:
+    - name: post_id
+      type: post
+      required: true
+    - name: writer_id
+      type: user
+      required: true
+    - name: content
+      type: string
+      required: true
+
+- Tags:
+  attributes:
+    - name: name
+      type: string
+      required: true
+
+- Likes:
+  attributes:
+    - name: post_id
+      type: post
+      required: true
+    - name: user_id
+      type: user
+      required: true
+
+- Images:
+  attributes:
+    - name: file_name
+      type: string
+      required: true
+    - name: file_size
+      type: number
+      required: true
+    - name: file_type
+      type: string
+      required: true
+    - name: uploaded_by
+      type: user
+      required: true
+    - name: uploaded_at
+      type: date
+
+- Videos:
+  attributes:
+    - name: file_name
+      type: string
+      required: true
+    - name: file_size
+      type: number
+      required: true
+    - name: file_type
+      type: string
+      required: true
+    - name: duration
+      type: number
+      required: true
+    - name: uploaded_by
+      type: user
+      required: true
+    - name: uploaded_at
+      type: date
+
+- Events:
+  attributes:
+    - name: title
+      type: string
+      required: true
+    - name: description
+      type: string
+    - name: start_time
+      type: date
+    - name: end_time
+      type: date
+    - name: location
+      type: string
+    - name: organizer_id
+      type: user
+      required: true
+
+- Categories:
+  attributes:
+    - name: name
+      type: string
+      required: true
+
+- Products:
+  attributes:
+    - name: name
+      type: string
+      required: true
+    - name: description
+      type: string
+    - name: price
+      type: number
+    - name: category_id
+      type: category
+      required: true
+
+- Orders:
+  attributes:
+    - name: order_number
+      type: string
+      required: true
+    - name: user_id
+      type: user
+      required: true
+    - name: product_id
+      type: product
+      required: true
+    - name: quantity
+      type: number
+      required: true
+    - name: total_amount
+      type: number
+      required: true
+    - name: order_date
+      type: date
+      required: true
+
+- Reviews:
+  attributes:
+    - name: product_id
+      type: product
+      required: true
+    - name: user_id
+      type: user
+      required: true
+    - name: rating
+      type: number
+      required: true
+    - name: comment
+      type: string
+
+- Addresses:
+  attributes:
+    - name: user_id
+      type: user
+      required: true
+    - name: street
+      type: string
+      required: true
+    - name: city
+      type: string
+      required: true
+    - name: state
+      type: string
+      required: true
+    - name: country
+      type: string
+      required: true
+    - name: postal_code
+      type: string
+      required: true
+
+- Payments:
+  attributes:
+    - name: order_id
+      type: order
+      required: true
+    - name: user_id
+      type: user
+      required: true
+    - name: payment_method
+      type: string
+      required: true
+    - name: amount
+      type: number
+      required: true
+    - name: payment_date
+      type: date
+      required: true
+
+- Chats:
+  attributes:
+    - name: participants
+      type: object
+      array: true
+      attributes:
+        - name: user_id
+          type: user
+          required: true
+        - name: last_read_at
+          type: date
+    - name: messages
+      type: object
+      array: true
+      attributes:
+        - name: sender_id
+          type: user
+          required: true
+        - name: content
+          type: string
+          required: true
+        - name: sent_at
+          type: date
+
+- Polls:
+  attributes:
+    - name: question
+      type: string
+      required: true
+    - name: options
+      type: object
+      array: true
+      attributes:
+        - name: value
+          type: string
+          required: true
+        - name: votes
+          type: number
+          Default: 0
+
+- Files:
+  attributes:
+    - name: file_name
+      type: string
+      required: true
+    - name: file_size
+      type: number
+      required: true
+    - name: file_type
+      type: string
+      required: true
+    - name: uploaded_by
+      type: user
+      required: true
+    - name: uploaded_at
+      type: date
