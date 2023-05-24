@@ -1,8 +1,8 @@
 # 🚀👶🏻 Newbie (Restful APIs Generator)
 
-**Project Description**: Newbie generates an advanced Express backend using TypeScript based on an input YAML file that contains only the models. It automates the process of setting up the server, routing, and database integration, saving developers valuable time and effort.👨‍💻💻
+**Project Description**: Newbie generates an advanced production level Express backend using TypeScript based on an input YAML file that contains only the models. It automates the process of setting up the server, routing, and database integration, saving developers valuable time and effort.👨‍💻💻
 
-## Table of Contents
+## Table of Contents 📑
 
 - [Installation](#installation) 🛠️
 - [Usage](#usage) ✍️
@@ -12,7 +12,7 @@
 - [Contributing](#contributing) 🤝
 - [License](#license) 📃
 
-## Installation
+## Installation 🛠️
 
 To use Newbie, follow these steps:
 
@@ -20,12 +20,12 @@ To use Newbie, follow these steps:
 
 2. Clone the repository: 👯‍♂️
 
-git clone https://github.com/OmarElsahragty/newbie.git 👯‍♀️
+- `git clone https://github.com/OmarElsahragty/newbie.git 👯‍♀️`
 
 3. Install the dependencies:
 
-cd newbie 💿
-npm install or yarn 🛠️
+- cd newbie 💿
+- npm install or yarn
 
 ## Models 🧠
 
@@ -170,38 +170,38 @@ To define the models for your backend, create a YAML file (`newbie.example.yaml`
 
 ## Supported Types
 
-1. string: Represents a string value. 💬
-2. number: Represents a numeric value. 🔢
-3. bigint: Represents a BigInt value. 🔢
-4. boolean: Represents a boolean value (true or false). ✅❌
-5. date: Represents a date value. 📅
-6. undefined: Represents an undefined value. ❓
-7. null: Represents a null value. 🚫
-8. array: Represents an array of values. 📚
-9. object: Represents an object with specified properties. 📁
-10. record: Represents an object with string keys and values of a specific type. 📚
-11. function: Represents a function. ⚙️
-12. literal: Represents a literal value. 📝
-13. enum: Represents a value from a predefined set of options. 🏷️
-14. nativeEnum: Represents a value from a predefined set of options using TypeScript's enum type. 🏷️
-15. promise: Represents a promise value. ⏳
-16. lazy: Represents a lazily evaluated value. 🛋️
-17. tuple: Represents a tuple with a fixed number of elements of different types. 📦
-18. intersection: Represents the intersection of multiple types. ⚓
-19. union: Represents a value that can be one of several types. 🔀
-20. optional: Represents an optional value. 🔄
-21. nullable: Represents a value that can be either of a specified type or null. ⚠️
-22. transformer: Represents a value transformed by a given transformation function. 🔄
-23. instanceof: Represents a value that is an instance of a specific class. 📦
-24. refinement: Represents a value that meets a specific refinement condition. ✔️
-25. check: Represents a value that passes a custom validation check. ✔️
+- string: Represents a string value. 💬
+- number: Represents a numeric value. 🔢
+- bigint: Represents a BigInt value. 🔢
+- boolean: Represents a boolean value (true or false). ✅❌
+- date: Represents a date value. 📅
+- undefined: Represents an undefined value. ❓
+- null: Represents a null value. 🚫
+- array: Represents an array of values. 📚
+- object: Represents an object with specified properties. 📁
+- record: Represents an object with string keys and values of a specific type. 📚
+- function: Represents a function. ⚙️
+- literal: Represents a literal value. 📝
+- enum: Represents a value from a predefined set of options. 🏷️
+- nativeEnum: Represents a value from a predefined set of options using TypeScript's enum type. 🏷️
+- promise: Represents a promise value. ⏳
+- lazy: Represents a lazily evaluated value. 🛋️
+- tuple: Represents a tuple with a fixed number of elements of different types. 📦
+- intersection: Represents the intersection of multiple types. ⚓
+- union: Represents a value that can be one of several types. 🔀
+- optional: Represents an optional value. 🔄
+- nullable: Represents a value that can be either of a specified type or null. ⚠️
+- transformer: Represents a value transformed by a given transformation function. 🔄
+- instanceof: Represents a value that is an instance of a specific class. 📦
+- refinement: Represents a value that meets a specific refinement condition. ✔️
+- check: Represents a value that passes a custom validation check. ✔️
 
 ## Usage
 
 To generate the backend, run the following command:
 
 1. Define the destination path in the index file
-2. npm run generate 🏃🏻
+2. `npm run generate 🏃🏻 `
 
 ## Database Integration
 
@@ -216,4 +216,4 @@ Contributions are welcome! If you find any issues or have suggestions for improv
 
 This project is licensed under the MIT License. Feel free to modify and use it according to your needs. 📃
 
-By following the instructions provided in this README, you will be able to generate a advanced production level Express backend using TypeScript in just seconds. If you have any questions or encounter any difficulties, please don't hesitate to reach out for support. Happy Automation! 🔥🔥🤖
+By following the instructions provided in this README, you will be able to generate an advanced production level Express backend using TypeScript in just seconds. If you have any questions or encounter any difficulties, please don't hesitate to reach out for support. Happy Automation! 🔥🔥🤖
