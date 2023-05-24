@@ -154,7 +154,11 @@ const modelGenerator = async (dist: string, module: ModuleInterface) => {
     },
     { timestamps: true, versionKey: false }
     )
-    ${module.auth?.identifier ? `.index({ ${module.auth.identifier}: 1 })\n.index({ accessType: 1 })` : ""}
+    ${
+      module.auth?.identifier
+        ? `.index({ ${module.auth.identifier}: 1 }, { unique: true })\n.index({ accessType: 1 })`
+        : ""
+    }
     .index({ isDeleted: 1 });
     
     ${
