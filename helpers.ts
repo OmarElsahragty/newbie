@@ -23,15 +23,15 @@ export const setModulesRef = (modules: ModuleInterface[]) => {
 };
 
 const zodAttributesBuilder = (attribute: AttributeInterface) => {
-  let type = attribute.isRef ? `${singular(attribute.type)}Schema` : `z.${attribute.type}()`;
+  let type = attribute.isRef ? `z.union([${singular(attribute.type)}Schema, z.string()])` : `z.${attribute.type}()`;
 
   if (attribute.enum) type = `z.enum(enums.${camelPascalCase(plural(attribute.name))})`;
   if (attribute.type === "object" && attribute.attributes) {
     type = `z.object({ ${attribute.attributes.map(attribute => zodAttributesBuilder(attribute)).join(", ")} })`;
   }
 
-  if (!attribute.required) type = `${type}.optional()`;
   if (attribute.array) type = `${type}.array()`;
+  if (!attribute.required) type = `${type}.optional()`;
 
   return `${camelCase(attribute.name)}: ${type}`;
 };
