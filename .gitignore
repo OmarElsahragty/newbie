@@ -83,4 +83,3 @@ yarn-error.log*
 
 # dist
 /newbie
-index.ts
