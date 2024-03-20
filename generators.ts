@@ -39,7 +39,7 @@ export default router;`;
 const controllerGenerator = async (dist: string, module: ModuleInterface) => {
   const content = `
   ${module.auth?.identifier && module.auth.password ? 'import { Request, Response, NextFunction } from "express";' : ""}
-  import DefaultController from "./default.controller";
+  import { DefaultController } from "../core";
   import { ${module.singularName}Service } from "../services";
   import { ${camelPascalCase(module.singularName)}Interface } from "../types";
   
@@ -71,7 +71,7 @@ const serviceGenerator = async (dist: string, module: ModuleInterface) => {
 
   const content = `
   ${module.auth?.identifier && module.auth.password ? 'import { sign } from "jsonwebtoken";' : ""}
-  import DefaultService from "./default.service";
+  import { DefaultService } from "../core";
   import { ${importedTypes.join(", ")} } from "../types";
   import { ${module.singularName}Repository } from "../database/repositories";
   ${
@@ -110,7 +110,7 @@ const serviceGenerator = async (dist: string, module: ModuleInterface) => {
 
 const repositoryGenerator = async (dist: string, module: ModuleInterface) => {
   const content = `
-  import DefaultRepository from "./default.repository";
+  import { DefaultRepository } from "../../core";
   import { ${camelPascalCase(module.singularName)}Interface } from "../../types";
   import { ${module.singularName}Model } from "../models";
   
